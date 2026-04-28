@@ -51,11 +51,12 @@ def fetch_data_from_api(params: dict | None = None) -> list[dict]:
     params = params or {}
 
     #validações parametros obrigatórios
-    if "pagina" not in params or not isinstance(params["pagina"], int) or params["pagina"] < 1:
-        raise ValueError("Parâmetro 'pagina' deve ser informado e deve ser um inteiro positivo")
+    # if "pagina" not in params or not isinstance(params["pagina"], int) or params["pagina"] < 1:
+    #    raise ValueError("Parâmetro 'pagina' deve ser informado e deve ser um inteiro positivo")
     
-    # chave-api-dados é como a API do Portal da Transparência espera o token de acesso, mas isso pode variar conforme a API alvo
-    headers = {"chave-api-dados": os.environ["API_KEY"]}
+    # Envia header de autenticação apenas quando a chave estiver configurada.
+    api_key = os.getenv("API_KEY", "").strip()
+    headers = {"chave-api-dados": api_key} if api_key else {}
     url = os.environ["API_BASE_URL"]
     #print(f"Requisitando {url} com params {params} ...")
 
@@ -65,7 +66,11 @@ def fetch_data_from_api(params: dict | None = None) -> list[dict]:
         # print(f"[INGEST] Buscando dados em: {url}, {params}, tentativa {tentativa+1}")
         response = requests.get(url, params=params, headers=headers, timeout=30)
         if response.status_code == 200:
-            return response.json()
+            payload = response.json()
+            # Endpoints OData costumam retornar {"value": [...]}.
+            if isinstance(payload, dict) and isinstance(payload.get("value"), list):
+                return payload["value"]
+            return payload
 
         if response.status_code in (401, 403): # ← nunca retentar
             raise PermissionError(
@@ -211,34 +216,34 @@ def save_watermark(timestamp: str, atualizado_em: str | None = None) -> None:
 
 def main():
     hash_inventario = load_hash_inventario()
-    dados_permissionarios = []
+    dados_resultado = []
     novos = 0
-    pagina = 1
-    while True:
-        print(f"Lendo página {pagina}...")
-        dados_pagina = fetch_data_from_api(
-            params={"pagina": pagina}
-        )
+    dataBase = "202601"
+    limite = 10000
+    paramsPixDadosAbertos = {
+        "@DataBase": f"'{dataBase}'",
+        "$top": limite,
+        "$format": "json",
+        "$select": "AnoMes,Municipio_Ibge,Municipio,Estado_Ibge,Estado,Sigla_Regiao,VL_PagadorPF,QT_PagadorPF,VL_PagadorPJ,QT_PagadorPJ,VL_RecebedorPF,QT_RecebedorPF,VL_RecebedorPJ,QT_RecebedorPJ,QT_PES_PagadorPF,QT_PES_PagadorPJ,QT_PES_RecebedorPF,QT_PES_RecebedorPJ",
+    }
 
-        if not dados_pagina:
-            break
+    print("Lendo dados...")
+    dados_pagina = fetch_data_from_api(params=paramsPixDadosAbertos)
 
-        if isinstance(dados_pagina, list):
-            dados_permissionarios.extend(dados_pagina)
-        else:
-            dados_permissionarios.append(dados_pagina)
+    if isinstance(dados_pagina, list):
+        dados_resultado.extend(dados_pagina)
+    elif dados_pagina:
+        dados_resultado.append(dados_pagina)
 
-        # Checkpoint incremental: mantém o arquivo atualizado a cada página
-        novos += save_raw(dados_permissionarios, RAW_FILE, hash_inventario)
-        print(f"[INGEST] {novos} novos registros persistidos.")
-
-        pagina += 1
+    # Checkpoint incremental da coleta atual
+    novos += save_raw(dados_resultado, RAW_FILE, hash_inventario)
+    print(f"[INGEST] {novos} novos registros persistidos.")
 
     # JSON Schema
     referencia_execucao = datetime.now().astimezone().isoformat()
-    save_json_schema(dados_permissionarios, RAW_FILE, coletado_em=referencia_execucao)
+    save_json_schema(dados_resultado, RAW_FILE, coletado_em=referencia_execucao)
 
-    print(f'{len(dados_permissionarios)} registros coletados e salvos em {RAW_FILE}. Desses, são {novos} registros novos.')
+    print(f'{len(dados_resultado)} registros coletados e salvos em {RAW_FILE}. Desses, são {novos} registros novos.')
 
     # Atualiza watermark para controle de atualizações incrementais
     watermark_anterior = load_watermark()

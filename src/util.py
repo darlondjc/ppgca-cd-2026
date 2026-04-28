@@ -7,9 +7,12 @@ def load_api_variables():
     api_key = os.getenv("API_KEY", "").strip()
     api_base_url = os.getenv("API_BASE_URL", "").strip()
 
-    if not api_key or not api_base_url:
+    if not api_base_url:
         raise EnvironmentError(
-            "Variáveis de ambiente API_KEY e API_BASE_URL são obrigatórias e devem estar preenchidas"
+            "Variável de ambiente API_BASE_URL é obrigatória e deve estar preenchida"
         )
+
+    if not api_key:
+        print("[INGEST] API_KEY não informada. Seguindo sem header de autenticação.")
 
     return api_key, api_base_url

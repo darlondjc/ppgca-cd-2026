@@ -10,8 +10,8 @@
 | Nome | Matrícula | E-mail |
 |------|-----------|--------|
 | Darlon Coqueiro | ... | ... |
-| Integrante 2 | ... | ... |
-| Integrante 3 | ... | ... |
+| Marcela | ... | ... |
+| Agnes | ... | ... |
 
 ---
 
@@ -21,7 +21,7 @@
 >
 > **Pergunta Central:** Qual é a pergunta de negócio que este projeto responde?
 >
-> **Fonte de Dados:** Qual API ou dataset foi utilizado?
+> **Fonte de Dados:** Qual API ou dataset foi utilizado? Transações Pix por Município, disponível no (link)[https://olinda.bcb.gov.br/olinda/servico/Pix_DadosAbertos/versao/v1/odata/TransacoesPixPorMunicipio(DataBase=@DataBase)].
 
 ---
 

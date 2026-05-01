@@ -12,7 +12,7 @@ def load_api_variables():
             "Variável de ambiente API_BASE_URL é obrigatória e deve estar preenchida"
         )
 
-    if not api_key:
-        print("[INGEST] API_KEY não informada. Seguindo sem header de autenticação.")
+    # if not api_key:
+    #     print("API_KEY não informada. Seguindo sem header de autenticação.")
 
     return api_key, api_base_url

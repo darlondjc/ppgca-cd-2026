@@ -9,19 +9,19 @@
 
 | Nome | Matrícula | E-mail |
 |------|-----------|--------|
-| Darlon Coqueiro | ... | ... |
-| Marcela | ... | ... |
-| Agnes | ... | ... |
+| Darlon Coqueiro | <ainda sem matrícula> | darlondjc@gmail.com |
+| Marcela Moraes | <ainda sem matrícula> | marcelamoraesa@hotmail.com |
+| Agnes Freire | <ainda sem matrícula> | agnesfreire.aof@gmail.com |
 
 ---
 
 ## 📋 Sobre o Projeto
 
-> **TODO:** Descreva o problema de negócio escolhido pelo grupo.
+> O projeto se dá acerca dos dados de **Transações Pix liquidadas por Município e por Pessoas Físicas (PF) e Jurídicas (PJ)**, na considerando a perspectiva do pagador e do recebedor.
 >
-> **Pergunta Central:** Qual é a pergunta de negócio que este projeto responde?
+> Através da API escolhida, o projeto se propõe a entender são os padrões de crescimento, distribuição geográfica e perfil de uso do Pix no Brasil, considerando volume financeiro, quantidade de transações, tipo de usuário (PF e PJ), estado e região. **Observação:** Para fins didáticos e pedagógicos, escolhemos o período de Janeiro a Abril de 2026, com no máximo 10.000 registros por mês.
 >
-> **Fonte de Dados:** Qual API ou dataset foi utilizado? Transações Pix por Município, disponível no (link)[https://olinda.bcb.gov.br/olinda/servico/Pix_DadosAbertos/versao/v1/odata/TransacoesPixPorMunicipio(DataBase=@DataBase)].
+> **Fonte de Dados:** Estatísticas do Pix / [Transações Pix por Município](https://dadosabertos.bcb.gov.br/dataset/pix/resource/268e3bf6-b096-4006-83cd-813697012ece), API disponível no [link](https://olinda.bcb.gov.br/olinda/servico/Pix_DadosAbertos/versao/v1/aplicacao#!/recursos/TransacoesPixPorMunicipio).
 
 ---
 
@@ -43,7 +43,7 @@ cd ppgca-cd-2026
 
 # 2. Configure as variáveis de ambiente
 cp .env.example .env
-# Edite o .env preenchendo o API_KEY e API_BASE_URL
+# Edite o .env a partir do .env.example preenchendo **SOMENTE** o API_BASE_URL. Para essa API em específico não foi preciso uso de API_KEY.
 
 # 3. Instale as dependências
 uv sync
@@ -56,7 +56,20 @@ uv sync
 uv run python src/ingest.py
 
 # Resultado esperado: 
-X registros coletados e salvos em RAW_FILE. Desses, são Y registros novos.
+[INGEST] Script de ingestão iniciado.
+Lendo dados para o período 01/2026...
+Encontrados X novos registros persistidos para 01/2026.
+Y registros coletados e salvos em data/raw/202601/data_set.json. Desses, são Z registros novos.
+Lendo dados para o período 02/2026...
+Encontrados X novos registros persistidos para 02/2026.
+Y registros coletados e salvos em data/raw/202602/data_set.json. Desses, são Z registros novos.
+Lendo dados para o período 03/2026...
+Encontrados X novos registros persistidos para 03/2026.
+Y registros coletados e salvos em data/raw/202603/data_set.json. Desses, são Z registros novos.
+Lendo dados para o período 04/2026...
+Encontrados X novos registros persistidos para 04/2026.
+Y registros coletados e salvos em data/raw/202604/data_set.json. Desses, são Z registros novos.
+Total coletado: W registros. Total de novos registros: K.
 Latência do pipeline: T min
 [INGEST] ✅ Sprint 1 concluído.
 ```

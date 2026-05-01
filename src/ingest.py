@@ -24,8 +24,8 @@ from util import load_api_variables
 # ── Configuração ──────────────────────────────────────────────────────────────
 load_api_variables()  # Carrega .env e valida variáveis de ambiente
 
-RAW_FILE = Path("data/raw/data_set.json")
-RAW_FILE.parent.mkdir(parents=True, exist_ok=True)
+RAW_BASE_DIR = Path("data/raw")
+RAW_BASE_DIR.mkdir(parents=True, exist_ok=True)
 
 HASH_FILE = Path("data/control/hashes.json")
 HASH_FILE.parent.mkdir(parents=True, exist_ok=True)
@@ -63,7 +63,7 @@ def fetch_data_from_api(params: dict | None = None) -> list[dict]:
     tentativa = 0
     max_tentativas = 5
     while tentativa < max_tentativas:
-        # print(f"[INGEST] Buscando dados em: {url}, {params}, tentativa {tentativa+1}")
+        # print(f"Buscando dados em: {url}, {params}, tentativa {tentativa+1}")
         response = requests.get(url, params=params, headers=headers, timeout=30)
         if response.status_code == 200:
             payload = response.json()
@@ -212,38 +212,72 @@ def save_watermark(timestamp: str, atualizado_em: str | None = None) -> None:
     latencia_min = (coletado - ultimo).total_seconds() / 60
     print(f"Latência do pipeline: {latencia_min:.1f} min")
 
+
+def listar_periodos(inicio: str, fim: str) -> list[str]:
+    """Gera períodos no formato AAAAMM de forma inclusiva."""
+    ano_ini, mes_ini = int(inicio[:4]), int(inicio[4:6])
+    ano_fim, mes_fim = int(fim[:4]), int(fim[4:6])
+
+    periodos = []
+    ano, mes = ano_ini, mes_ini
+    while (ano, mes) <= (ano_fim, mes_fim):
+        periodos.append(f"{ano}{mes:02d}")
+        mes += 1
+        if mes > 12:
+            mes = 1
+            ano += 1
+
+    return periodos
+
 # ── Ponto de Entrada ──────────────────────────────────────────────────────────
 
 def main():
+    print("[INGEST] Script de ingestão iniciado.")
+
     hash_inventario = load_hash_inventario()
-    dados_resultado = []
-    novos = 0
-    dataBase = "202601"
+    novos_total = 0
+    registros_totais = 0
     limite = 10000
-    paramsPixDadosAbertos = {
-        "@DataBase": f"'{dataBase}'",
-        "$top": limite,
-        "$format": "json",
-        "$select": "AnoMes,Municipio_Ibge,Municipio,Estado_Ibge,Estado,Sigla_Regiao,VL_PagadorPF,QT_PagadorPF,VL_PagadorPJ,QT_PagadorPJ,VL_RecebedorPF,QT_RecebedorPF,VL_RecebedorPJ,QT_RecebedorPJ,QT_PES_PagadorPF,QT_PES_PagadorPJ,QT_PES_RecebedorPF,QT_PES_RecebedorPJ",
-    }
+    periodos = listar_periodos("202601", "202604")
 
-    print("Lendo dados...")
-    dados_pagina = fetch_data_from_api(params=paramsPixDadosAbertos)
+    for dataBase in periodos:
+        dados_resultado = []
+        paramsPixDadosAbertos = {
+            "@DataBase": f"'{dataBase}'",
+            "$top": limite,
+            '$orderby': 'Municipio_Ibge',
+            "$format": "json",
+        }
+        dataBaseFormatado = f"{dataBase[4:6]}/{dataBase[:4]}"
+        destino_raw = RAW_BASE_DIR / dataBase / "data_set.json"
 
-    if isinstance(dados_pagina, list):
-        dados_resultado.extend(dados_pagina)
-    elif dados_pagina:
-        dados_resultado.append(dados_pagina)
+        print(f"Lendo dados para o período de {dataBaseFormatado}...")
+        dados_pagina = fetch_data_from_api(params=paramsPixDadosAbertos)
 
-    # Checkpoint incremental da coleta atual
-    novos += save_raw(dados_resultado, RAW_FILE, hash_inventario)
-    print(f"[INGEST] {novos} novos registros persistidos.")
+        if isinstance(dados_pagina, list):
+            dados_resultado.extend(dados_pagina)
+        elif dados_pagina:
+            dados_resultado.append(dados_pagina)
 
-    # JSON Schema
+        novos_periodo = save_raw(dados_resultado, destino_raw, hash_inventario)
+        novos_total += novos_periodo
+        registros_totais += len(dados_resultado)
+        print(f"Encontrados {novos_periodo} novos registros persistidos para {dataBaseFormatado}.")
+
+        # JSON Schema por período
+        referencia_execucao = datetime.now().astimezone().isoformat()
+        save_json_schema(dados_resultado, destino_raw, coletado_em=referencia_execucao)
+
+        print(
+            f"{len(dados_resultado)} registros coletados e salvos em {destino_raw}. "
+            f"Desses, são {novos_periodo} registros novos."
+        )
+
     referencia_execucao = datetime.now().astimezone().isoformat()
-    save_json_schema(dados_resultado, RAW_FILE, coletado_em=referencia_execucao)
-
-    print(f'{len(dados_resultado)} registros coletados e salvos em {RAW_FILE}. Desses, são {novos} registros novos.')
+    print(
+        f"Total coletado: {registros_totais} registros. "
+        f"Total de novos registros: {novos_total}."
+    )
 
     # Atualiza watermark para controle de atualizações incrementais
     watermark_anterior = load_watermark()

@@ -23,7 +23,7 @@
 >
 > **Fonte de Dados:** Estatísticas do Pix / [Transações Pix por Município](https://dadosabertos.bcb.gov.br/dataset/pix/resource/268e3bf6-b096-4006-83cd-813697012ece), API disponível no [link](https://olinda.bcb.gov.br/olinda/servico/Pix_DadosAbertos/versao/v1/aplicacao#!/recursos/TransacoesPixPorMunicipio).
 >
-> **Estratégia de Carga:** Incremental, visto que o volume de dados é crescente. Porém há o uso de _hashes_ para garantia de idempotência para evitar duplicidade. Foi utilizado também o recurso de _watermark_ para verificação de latência entre execuções.
+> **Estratégia de Carga:** _Full load_, com volume de dados é crescente. Porém há o uso de _hashes_ para garantia de idempotência para evitar duplicidade. Foi utilizado também o recurso de _watermark_ para verificação de latência entre execuções.
 
 ---
 
@@ -45,7 +45,7 @@ cd ppgca-cd-2026
 
 # 2. Configure as variáveis de ambiente
 cp .env.example .env
-# Edite o .env a partir do .env.example preenchendo **SOMENTE** o API_BASE_URL. Para essa API em específico não foi preciso uso de API_KEY.
+# Edite o .env preenchendo **SOMENTE** o API_BASE_URL com a URL informada (se vazia). Para essa API em específico não foi preciso uso de API_KEY.
 
 # 3. Instale as dependências
 uv sync

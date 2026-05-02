@@ -105,7 +105,7 @@ def fetch_data_from_api(params: dict | None = None) -> list[dict]:
 def save_raw(conteudo, destino: Path, inventario: set) -> int:
     """
     Salva os dados brutos em JSON na camada raw com timestamp.
-    Estratégia: Full Load com data de coleta no nome do arquivo.
+    Estratégia: Full Load sem data de coleta no nome do arquivo, mas mantendo um inventário de hashes para evitar duplicação.
     """
     # Persiste registros sem duplicar e reconstrói o raw se ele tiver sido apagado
     registros = conteudo if isinstance(conteudo, list) else [conteudo]

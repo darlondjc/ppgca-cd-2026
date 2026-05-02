@@ -1,6 +1,13 @@
 import os
 from dotenv import load_dotenv
+from datetime import datetime, timezone
 
+
+def normalize_datetime(valor: str) -> datetime:
+    dt = datetime.fromisoformat(valor)
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt
 
 def load_api_variables():
     load_dotenv()  # carrega .env para os.environ

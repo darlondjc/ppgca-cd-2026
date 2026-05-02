@@ -19,7 +19,7 @@ import requests
 
 from datetime import datetime, timezone
 from pathlib import Path
-from util import load_api_variables
+from util import load_api_variables, normalize_datetime
 
 # ── Configuração ──────────────────────────────────────────────────────────────
 load_api_variables()  # Carrega .env e valida variáveis de ambiente
@@ -36,6 +36,9 @@ WATERMARK_FILE.parent.mkdir(parents=True, exist_ok=True)
 # ── Funções ───────────────────────────────────────────────────────────────────
 
 def load_hash_inventario() -> set:
+    """
+    Carrega os hashes dos registros já persistidos.
+    """
     if HASH_FILE.exists():
         conteudo = HASH_FILE.read_text().strip()
         if conteudo:
@@ -50,10 +53,6 @@ def fetch_data_from_api(params: dict | None = None) -> list[dict]:
 
     params = params or {}
 
-    #validações parametros obrigatórios
-    # if "pagina" not in params or not isinstance(params["pagina"], int) or params["pagina"] < 1:
-    #    raise ValueError("Parâmetro 'pagina' deve ser informado e deve ser um inteiro positivo")
-    
     # Envia header de autenticação apenas quando a chave estiver configurada.
     api_key = os.getenv("API_KEY", "").strip()
     headers = {"chave-api-dados": api_key} if api_key else {}
@@ -71,6 +70,11 @@ def fetch_data_from_api(params: dict | None = None) -> list[dict]:
             if isinstance(payload, dict) and isinstance(payload.get("value"), list):
                 return payload["value"]
             return payload
+
+        if response.status_code == 400: # Erro na requisição (ex: parâmetros inválidos) — não adianta retentar
+            raise ValueError(
+                f"Erro na requisição ({response.status_code}). Revise a URL e os parâmetros enviados."
+            )
 
         if response.status_code in (401, 403): # ← nunca retentar
             raise PermissionError(
@@ -181,18 +185,15 @@ def save_json_schema(dados: dict, destino: Path, coletado_em: str | None = None)
         json.dumps(schema, ensure_ascii=False))
     return coletado_em
 
-def normalize_datetime(valor: str) -> datetime:
-    dt = datetime.fromisoformat(valor)
-    if dt.tzinfo is None:
-        return dt.replace(tzinfo=timezone.utc)
-    return dt
-
 def load_watermark() -> str:
+    data_primeira_execucao = "1970-01-01T00:00:00+00:00"
+    
     if WATERMARK_FILE.exists():
         conteudo = json.loads(WATERMARK_FILE.read_text())
-        return conteudo.get("atualizado_em") or conteudo.get("ultimo_registro", "1970-01-01T00:00:00+00:00")
-    # Data zero: na 1a execução faz Full Load implícito
-    return "1970-01-01T00:00:00+00:00"
+        return conteudo.get("atualizado_em") or conteudo.get("ultimo_registro", data_primeira_execucao)
+    
+    # Data zero: na 1a execução faz load implícito
+    return data_primeira_execucao
 
 def save_watermark(timestamp: str, atualizado_em: str | None = None) -> None:
     ultimo = normalize_datetime(timestamp)
@@ -212,23 +213,6 @@ def save_watermark(timestamp: str, atualizado_em: str | None = None) -> None:
     latencia_min = (coletado - ultimo).total_seconds() / 60
     print(f"Latência do pipeline: {latencia_min:.1f} min")
 
-
-def listar_periodos(inicio: str, fim: str) -> list[str]:
-    """Gera períodos no formato AAAAMM de forma inclusiva."""
-    ano_ini, mes_ini = int(inicio[:4]), int(inicio[4:6])
-    ano_fim, mes_fim = int(fim[:4]), int(fim[4:6])
-
-    periodos = []
-    ano, mes = ano_ini, mes_ini
-    while (ano, mes) <= (ano_fim, mes_fim):
-        periodos.append(f"{ano}{mes:02d}")
-        mes += 1
-        if mes > 12:
-            mes = 1
-            ano += 1
-
-    return periodos
-
 # ── Ponto de Entrada ──────────────────────────────────────────────────────────
 
 def main():
@@ -237,8 +221,8 @@ def main():
     hash_inventario = load_hash_inventario()
     novos_total = 0
     registros_totais = 0
-    limite = 10000
-    periodos = listar_periodos("202601", "202604")
+    limite = 10000 #limite de registros por período definido
+    periodos = ["202601", "202602", "202603", "202604"] #períodos definidos a serem utilizados
 
     for dataBase in periodos:
         dados_resultado = []

@@ -23,7 +23,7 @@
 >
 > **Fonte de Dados:** Estatísticas do Pix / [Transações Pix por Município](https://dadosabertos.bcb.gov.br/dataset/pix/resource/268e3bf6-b096-4006-83cd-813697012ece), API disponível no [link](https://olinda.bcb.gov.br/olinda/servico/Pix_DadosAbertos/versao/v1/aplicacao#!/recursos/TransacoesPixPorMunicipio).
 >
-> **Estratégia de Carga:** _Full load_, com volume de dados é crescente. Porém há o uso de _hashes_ para garantia de idempotência para evitar duplicidade. Foi utilizado também o recurso de _watermark_ para verificação de latência entre execuções.
+> **Estratégia de Carga:** _Full load_, com volume de dados é crescente. Porém há o uso de _hashes_ para garantia de idempotência para evitar duplicidade. Foi utilizado também o recurso de _watermark_ para verificação de latência entre execuções. Ambos os arquivos de _hashes_ e _watermark_ ficam disponíveis no diretório data/control.
 
 ---
 

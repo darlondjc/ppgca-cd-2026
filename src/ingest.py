@@ -134,7 +134,7 @@ def save_raw(conteudo, destino: Path, inventario: set) -> int:
     novos = 0
     for registro in registros:
         hash_r = hashlib.sha256(
-            json.dumps(registro, sort_keys=True).encode()
+            json.dumps(registro, sort_keys=True).encode() #hash calculado sobre o registro inteiro
         ).hexdigest()
 
         if hash_r not in inventario:

@@ -21,7 +21,11 @@
 >
 > Através da API escolhida, o projeto se propõe a entender os padrões de crescimento, distribuição geográfica e perfil de uso do Pix no Brasil, considerando volume financeiro, quantidade de transações, tipo de usuário (PF e PJ), estado e região. **Observação:** Para fins didáticos e pedagógicos, foi escolhido o período de **Janeiro a Abril** de 2026, com no máximo **10.000 registros por mês**.
 >
-> **Fonte de Dados:** Estatísticas do Pix / [Transações Pix por Município](https://dadosabertos.bcb.gov.br/dataset/pix/resource/268e3bf6-b096-4006-83cd-813697012ece), API disponível no [link](https://olinda.bcb.gov.br/olinda/servico/Pix_DadosAbertos/versao/v1/aplicacao#!/recursos/TransacoesPixPorMunicipio).
+> **Fonte de Dados:** Estatísticas do Pix / [Transações Pix por Município](https://dadosabertos.bcb.gov.br/dataset/pix/resource/268e3bf6-b096-4006-83cd-813697012ece).
+>
+> API **para testes no navegador** disponível no [link](https://olinda.bcb.gov.br/olinda/servico/Pix_DadosAbertos/versao/v1/aplicacao#!/recursos/TransacoesPixPorMunicipio).
+>
+> URL da API **para uso no arquivo .env** no [link](https://olinda.bcb.gov.br/olinda/servico/Pix_DadosAbertos/versao/v1/odata/TransacoesPixPorMunicipio(DataBase=@DataBase)).
 >
 > **Estratégia de Carga:** _Full load_, com volume de dados é crescente. Porém há o uso de _hashes_ para garantia de idempotência para evitar duplicidade. Foi utilizado também o recurso de _watermark_ para verificação de latência entre execuções. Ambos os arquivos de _hashes_ e _watermark_ ficam disponíveis no diretório data/control.
 

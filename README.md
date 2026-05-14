@@ -79,3 +79,20 @@ Total coletado: W registros. Total de novos registros: K.
 Latência do pipeline: T min
 [INGEST] ✅ Sprint 1 concluído.
 ```
+
+```bash
+# Sprint 2 — Qualidade & Trusted Layer
+uv run python src/transform.py
+
+# Resultado esperado:
+
+```
+
+### Executar o notebook EDA - Diagnóstico de Qualidade 
+
+```bash
+uv run quarto preview notebooks/eda_qualidade.qmd
+
+# Resultado esperado
+Output created: eda_qualidade.html
+```

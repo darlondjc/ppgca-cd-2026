@@ -19,7 +19,7 @@ import requests
 
 from datetime import datetime, timezone
 from pathlib import Path
-from util import load_api_variables, normalize_datetime
+from util import load_api_variables, normalize_datetime, get_periodos_pesquisa
 
 # ── Configuração ──────────────────────────────────────────────────────────────
 load_api_variables()  # Carrega .env e valida variáveis de ambiente
@@ -222,7 +222,7 @@ def main():
     novos_total = 0
     registros_totais = 0
     limite = 10000 #limite de registros por período definido
-    periodos = ["202601", "202602", "202603", "202604"] #períodos definidos a serem utilizados
+    periodos = get_periodos_pesquisa()
 
     for dataBase in periodos:
         dados_resultado = []

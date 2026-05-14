@@ -1,0 +1,57 @@
+---
+title: "EDA - Diagnóstico de Qualidade"
+format:
+  html:
+    toc: true
+jupyter: python3
+---
+
+## Importações
+
+```{python}
+import duckdb
+import pandas as pd
+import missingno as msno
+```
+---
+
+## Verificação de perfil
+```{python}
+con = duckdb.connect()
+
+PARQUET = "../data/trusted/**/*.parquet"
+
+perfil = con.sql(f"""
+SUMMARIZE SELECT * FROM '{PARQUET}'
+""").df()
+
+perfil_filtrado = (
+    perfil[['column_name', 'null_percentage', 'min', 'max', 'avg']]
+    .sort_values('null_percentage', ascending=False)
+)
+
+perfil_filtrado
+```
+---
+
+## Presença por coluna
+> Sem amostra, pois trata-se de um dataset pequeno
+```{python}
+df_amostra = con.sql(f"""
+SELECT *
+FROM '{PARQUET}'
+""").df()
+
+print(f"Linhas totais: {len(df_amostra):,}")
+msno.bar(df_amostra, figsize=(10, 4))
+```
+
+## Padrão espacial
+```{python}
+msno.matrix(df_amostra, figsize=(10, 4))
+```
+
+## Correlação entre ausências
+```{python}
+msno.heatmap(df_amostra, figsize=(8, 6))
+```

@@ -2,6 +2,8 @@ import os
 from dotenv import load_dotenv
 from datetime import datetime, timezone
 
+def get_periodos_pesquisa():
+    return ["202601", "202602", "202603", "202604"]
 
 def normalize_datetime(valor: str) -> datetime:
     dt = datetime.fromisoformat(valor)

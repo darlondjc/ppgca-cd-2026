@@ -89,10 +89,11 @@ uv run python src/transform.py
 ```
 
 ### Executar o notebook EDA - Diagnóstico de Qualidade 
-
+> Comando usado para geração nas subetapas de transformação:
 ```bash
-uv run quarto preview notebooks/eda_qualidade.qmd
+uv run quarto render notebooks/eda_qualidade.qmd
 
 # Resultado esperado
 Output created: eda_qualidade.html
 ```
+> Após a execução da etapa inteira de transformação, uma nova geração desse arquivo poderá conter resultados diferentes devido as etapas de **quarentena, normalização e deduplicação**.

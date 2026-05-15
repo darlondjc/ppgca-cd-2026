@@ -1,8 +1,15 @@
 ---
 title: "EDA - Diagnóstico de Qualidade"
+subtitle: "PPGCA 2026 · Mestrado Profissional em Ciência de Dados"
+author: "Darlon | Marcela | Agnes"
+date: today
 format:
   html:
+    theme: cosmo
     toc: true
+    toc-depth: 3
+    code-fold: true
+    self-contained: true
 jupyter: python3
 ---
 
@@ -35,7 +42,7 @@ perfil_filtrado
 ---
 
 ## Presença por coluna
-> Sem amostra, pois trata-se de um dataset pequeno
+> Sem uso de amostra, pois trata-se de um dataset pequeno.
 ```{python}
 df_amostra = con.sql(f"""
 SELECT *
@@ -52,6 +59,136 @@ msno.matrix(df_amostra, figsize=(10, 4))
 ```
 
 ## Correlação entre ausências
+> Após a remoção dos registros com **Municipio_Ibge** nulo, não houve mais ocorrência de registro nulo.
 ```{python}
-msno.heatmap(df_amostra, figsize=(8, 6))
+
+missing_cols = df_amostra.columns[df_amostra.isnull().any()]
+
+if len(missing_cols) > 1:
+    msno.heatmap(df_amostra[missing_cols], figsize=(8, 6))
+else:
+    print("Não há colunas suficientes com valores ausentes para gerar heatmap.")
+```
+
+## Visualizações
+
+```{python}
+import plotly.express as px
+
+colunas_metricas = [
+    "VL_PagadorPF",
+    "VL_PagadorPJ",
+    "VL_RecebedorPF",
+    "VL_RecebedorPJ"
+]
+
+# mantém apenas colunas existentes
+colunas_metricas = [
+    c for c in colunas_metricas
+    if c in df_amostra.columns
+]
+
+if colunas_metricas and "AnoMes" in df_amostra.columns:
+
+    df_plot = (
+        df_amostra
+        .groupby("AnoMes")[colunas_metricas]
+        .sum()
+        .reset_index()
+    )
+
+    fig = px.line(
+        df_plot,
+        x="AnoMes",
+        y=colunas_metricas,
+        markers=True,
+        title="Evolução Temporal das Métricas"
+    )
+
+    fig.update_layout(
+        xaxis_title="Ano/Mês",
+        yaxis_title="Valor",
+        legend_title="Métrica"
+    )
+
+    fig.show()
+```
+
+## Diagnóstico IQR
+
+```{python}
+q1 = df_amostra['VL_PagadorPF'].quantile(0.25)
+q3 = df_amostra['VL_PagadorPF'].quantile(0.75)
+iqr = q3 - q1
+limite_inferior = q1 - 1.5 * iqr
+limite_superior = q3 + 1.5 * iqr
+
+mascara = df_amostra['VL_PagadorPF'] > limite_superior
+print(f"Outliers: {mascara.sum()} registros ({mascara.mean()*100:.1f}%)")
+print(df_amostra.loc[mascara,'VL_PagadorPF'].describe())
+
+q1 = df_amostra['VL_PagadorPJ'].quantile(0.25)
+q3 = df_amostra['VL_PagadorPJ'].quantile(0.75)
+iqr = q3 - q1
+limite_inferior = q1 - 1.5 * iqr
+limite_superior = q3 + 1.5 * iqr
+
+mascara = df_amostra['VL_PagadorPJ'] > limite_superior
+print(f"Outliers: {mascara.sum()} registros ({mascara.mean()*100:.1f}%)")
+print(df_amostra.loc[mascara,'VL_PagadorPJ'].describe())
+```
+
+## Quarentena
+> Origem: **data/trusted/part**
+
+> Total processado vs Total quarentenado
+```{python}
+df_processado = con.sql("""
+    SELECT *
+    FROM read_parquet('../data/trusted/part/**/*.parquet')
+""").df()
+
+df_quarentena = con.sql("""
+    SELECT *
+    FROM read_parquet('../data/trusted/quarantine/part/**/*.parquet')
+""").df()
+
+total_processado = len(df_processado)
+total_quarentena = len(df_quarentena)
+
+percentual_quarentena = (
+    total_quarentena / total_processado * 100
+)
+
+resumo_quarentena = pd.DataFrame({
+    "Metrica": [
+        "Total processado",
+        "Total quarentenado",
+        "Percentual quarentenado (%)"
+    ],
+    "Valor": [
+        total_processado,
+        total_quarentena,
+        round(percentual_quarentena, 2)
+    ]
+})
+
+resumo_quarentena
+```
+> Contagem por tipo de violação
+```{python}
+violacoes = pd.DataFrame({
+    "Violacao": [
+        "Municipio_Ibge nulo",
+        "Estado_Ibge nulo",
+        "Sigla_Regiao nulo"
+    ],
+    "Quantidade": [
+        df_quarentena["Municipio_Ibge"].isna().sum(),
+        df_quarentena["Estado_Ibge"].isna().sum(),
+        df_quarentena["Sigla_Regiao"].isna().sum()
+    ]
+})
+
+violacoes
 ```
